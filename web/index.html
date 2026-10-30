@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="pt-PT">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>Chest Count · Inventários</title>
+  <link rel="icon" href="/chest.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/style.css">
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="/" aria-label="Chest Count, início"><span class="brand-icon"><img src="/chest.svg" alt="" width="29" height="29"></span><span>Chest Count<span class="brand-caption">O TEU INVENTÁRIO, À VISTA.</span></span></a>
+    <div class="header-meta"><span class="development">AMBIENTE LOCAL</span><span id="connection" class="connection pending" role="status">A ligar ao servidor</span></div>
+  </header>
+  <main class="workspace">
+    <div class="page-heading"><div><p class="eyebrow">EXPLORADOR DE INVENTÁRIOS</p><h1>Um lugar para cada item.</h1><p class="subtitle">Consulta os baús sincronizados do teu mundo Minecraft.</p></div><span class="read-only">Só leitura <span aria-hidden="true">↗</span></span></div>
+    <div class="toolbar"><p id="last-refresh" class="last-refresh">À espera da primeira consulta</p><div class="refresh-controls"><label class="auto-label"><input id="auto-refresh" type="checkbox" checked><span>Atualizar a cada 10 s</span></label><button id="refresh" class="refresh-button" type="button"><span aria-hidden="true">↻</span> Atualizar</button></div></div>
+    <div id="error" class="notice error-notice" role="alert" hidden></div>
+    <div class="layout">
+      <aside class="sidebar card" aria-label="Mundos e baús">
+        <section class="world-section"><h2 class="section-label">O TEU MUNDO</h2><label class="sr-only" for="world-select">Selecionar mundo</label><select id="world-select"><option value="">A carregar mundos…</option></select><p id="world-id" class="world-id">—</p><p id="world-updated" class="muted small"></p></section>
+        <section class="chest-section"><div class="section-heading"><h2>Baús</h2><span id="chest-count" class="count-badge">0</span></div><label class="removed-filter"><input id="show-deleted" type="checkbox"> Mostrar removidos</label><div id="chest-list" class="chest-list" aria-label="Selecionar baú"></div><p id="list-empty" class="list-empty">A carregar…</p></section>
+        <div class="sidebar-foot"><span class="tiny-square" aria-hidden="true"></span> Dados do servidor local</div>
+      </aside>
+      <section class="inventory-column" aria-label="Inventário do baú">
+        <div id="welcome" class="card welcome"><img src="/chest.svg" alt="" width="64" height="64"><h2>Nenhum baú selecionado</h2><p id="welcome-text">Seleciona um mundo e um baú para explorar o inventário.</p></div>
+        <article id="chest-view" class="card chest-view" hidden>
+          <header class="chest-header"><div class="chest-title-line"><div><p class="eyebrow">BAÚ SELECIONADO</p><h2 id="chest-name"></h2></div><span id="chest-type" class="type-badge"></span></div><div class="location-line"><span id="dimension" class="dimension"></span><span id="coordinates" class="coordinates"></span></div><p id="chest-id" class="chest-id"></p></header>
+          <div id="chest-notice" class="notice chest-notice" role="status" hidden></div>
+          <section class="inventory-section"><div class="inventory-label"><h3>Inventário</h3><span id="slot-summary"></span></div><div class="inventory-surround"><div id="inventory-grid" class="inventory-grid" role="group" aria-label="Slots do inventário"></div><p id="unknown-size" class="unknown-size" hidden>Tamanho desconhecido. A identidade física não permite confirmar 27 ou 54 slots.</p></div><p class="inventory-hint"><span aria-hidden="true">⌁</span> Seleciona um slot para ver os detalhes do item.</p></section>
+          <footer class="chest-footer"><span id="chest-total"></span><span id="server-revision" class="revision"></span></footer>
+          <div class="snapshot-time"><span class="status-dot" aria-hidden="true"></span><span id="snapshot-time"></span></div>
+        </article>
+      </section>
+      <aside class="details-column card" aria-label="Detalhes do item"><div class="details-heading"><h2 class="section-label">DETALHES DO ITEM</h2><span class="mini-grid" aria-hidden="true">▦</span></div><div id="detail-preview" class="detail-preview"><span class="preview-cross" aria-hidden="true">+</span></div><p id="detail-kicker" class="detail-kicker">À TUA ESCOLHA</p><h2 id="detail-name" class="detail-name">Seleciona um slot</h2><p id="detail-description" class="detail-description">Os detalhes do item aparecem aqui.</p><dl class="detail-fields"><div><dt>ID Minecraft</dt><dd id="detail-id">—</dd></div><div class="detail-pair"><div><dt>Quantidade</dt><dd id="detail-count">—</dd></div><div><dt>Slot real</dt><dd id="detail-slot">—</dd></div></div><div><dt>Baú</dt><dd id="detail-chest">—</dd></div></dl><div class="detail-note"><span aria-hidden="true">i</span><p>Este painel consulta snapshots guardados. O inventário do jogo não é alterado.</p></div></aside>
+    </div>
+    <footer class="page-footer"><span>CHEST COUNT <span class="footer-divider">/</span> EXPLORADOR LOCAL</span><span>Ícones por <a href="https://blocksitems.com/api" target="_blank" rel="noopener noreferrer">BlocksItems</a><span class="footer-divider">·</span> API 2026.1.2</span></footer>
+    <noscript><p class="notice">Ativa o JavaScript para consultar a API local e visualizar os inventários.</p></noscript>
+  </main>
+</body>
+</html>

@@ -1,0 +1,22 @@
+{
+  "date": "2026-10-30",
+  "tests": 41,
+  "failures": 0,
+  "errors": 0,
+  "skipped": 0,
+  "serverTests": 23,
+  "webHttpTests": 7,
+  "browserTests": 11,
+  "icons": {
+    "minecraft:diamond": 200,
+    "minecraft:iron_ingot": 200,
+    "minecraft:oak_log": 200,
+    "minecraft:netherite_sword": 200,
+    "chestcount:missing_test_icon": 404
+  },
+  "health": {
+    "success": true,
+    "protocolVersion": 1,
+    "service": "chestcount"
+  }
+}

@@ -1,0 +1,514 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Chest Count local development API",
+    "version": "1.0.0",
+    "description": "No authentication. Loopback development only. Each upsert requires a complete chest inventory; slots unique and within 27/54; double chest blocks adjacent on same Y. Transactions rollback on storage exceptions."
+  },
+  "servers": [
+    {
+      "url": "http://127.0.0.1:8080"
+    }
+  ],
+  "paths": {
+    "/api/v1/sync": {
+      "post": {
+        "summary": "Apply a batch transactionally with per-change results",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SyncRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Processed; inspect each status",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SyncResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid envelope or JSON"
+          },
+          "403": {
+            "description": "Policy denied"
+          },
+          "413": {
+            "description": "Limit 8 MiB"
+          },
+          "500": {
+            "description": "Rolled back transaction"
+          }
+        }
+      }
+    },
+    "/api/v1/health": {
+      "get": {
+        "summary": "Health and protocol version",
+        "responses": {
+          "200": {
+            "description": "Ready"
+          }
+        }
+      }
+    },
+    "/api/v1/worlds": {
+      "get": {
+        "summary": "List worlds",
+        "responses": {
+          "200": {
+            "description": "worlds array"
+          }
+        }
+      }
+    },
+    "/api/v1/worlds/{worldId}/chests": {
+      "get": {
+        "summary": "List consolidated chests, including tombstones",
+        "parameters": [
+          {
+            "name": "worldId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "chests array"
+          },
+          "404": {
+            "description": "Unknown world"
+          }
+        }
+      }
+    },
+    "/api/v1/worlds/{worldId}/chests/{chestId}": {
+      "get": {
+        "summary": "Chest, items, serverRevision and deleted",
+        "parameters": [
+          {
+            "name": "worldId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "chestId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Chest",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Chest"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/v1/worlds/{worldId}/export": {
+      "get": {
+        "summary": "Local formatVersion=1 world document and separate tombstones",
+        "parameters": [
+          {
+            "name": "worldId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Full export"
+          },
+          "404": {
+            "description": "Unknown world"
+          }
+        }
+      }
+    },
+    "/api/v1/worlds/{worldId}/changes": {
+      "get": {
+        "summary": "Global sequence cursor, scoped to this world",
+        "parameters": [
+          {
+            "name": "worldId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "since",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 256,
+              "default": 100
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "changes, nextCursor, hasMore"
+          },
+          "400": {
+            "description": "Invalid cursor/limit"
+          },
+          "404": {
+            "description": "Unknown world"
+          }
+        }
+      }
+    },
+    "/api/sync": {
+      "post": {
+        "deprecated": true,
+        "summary": "Legacy full-document archive; never applied to SQLite",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "chests"
+                ],
+                "properties": {
+                  "chests": {
+                    "type": "array",
+                    "items": {
+                      "type": "object"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "success, received, legacy=true"
+          },
+          "400": {
+            "description": "Expected full snapshot"
+          },
+          "413": {
+            "description": "Too large"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Position": {
+        "type": "object",
+        "required": [
+          "x",
+          "y",
+          "z"
+        ],
+        "properties": {
+          "x": {
+            "type": "integer",
+            "minimum": -30000000,
+            "maximum": 30000000
+          },
+          "y": {
+            "type": "integer",
+            "minimum": -2048,
+            "maximum": 2048
+          },
+          "z": {
+            "type": "integer",
+            "minimum": -30000000,
+            "maximum": 30000000
+          }
+        }
+      },
+      "Identity": {
+        "type": "object",
+        "required": [
+          "world",
+          "dimension",
+          "blocks"
+        ],
+        "properties": {
+          "world": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "dimension": {
+            "type": "string",
+            "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+          },
+          "blocks": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 2,
+            "items": {
+              "$ref": "#/components/schemas/Position"
+            }
+          }
+        }
+      },
+      "Item": {
+        "type": "object",
+        "required": [
+          "slot",
+          "item_id",
+          "count"
+        ],
+        "properties": {
+          "slot": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 53
+          },
+          "item_id": {
+            "type": "string",
+            "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+          },
+          "count": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9999
+          }
+        }
+      },
+      "Chest": {
+        "type": "object",
+        "required": [
+          "name",
+          "identity",
+          "items",
+          "structureChanged"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "identity": {
+            "$ref": "#/components/schemas/Identity"
+          },
+          "items": {
+            "type": "array",
+            "maxItems": 54,
+            "items": {
+              "$ref": "#/components/schemas/Item"
+            }
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "syncedAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "structureChanged": {
+            "type": "boolean"
+          },
+          "serverRevision": {
+            "type": "integer"
+          },
+          "deleted": {
+            "type": "boolean"
+          }
+        }
+      },
+      "Change": {
+        "type": "object",
+        "required": [
+          "changeId",
+          "chestId",
+          "revision",
+          "operation",
+          "data"
+        ],
+        "properties": {
+          "changeId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "chestId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "revision": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          },
+          "baseServerRevision": {
+            "type": "integer",
+            "minimum": 0,
+            "default": 0
+          },
+          "dimension": {
+            "type": "string",
+            "description": "Required for non-upsert; inferred from data.identity for upsert if absent."
+          },
+          "operation": {
+            "type": "string",
+            "enum": [
+              "upsert",
+              "rename",
+              "delete",
+              "structure_changed"
+            ]
+          },
+          "data": {
+            "type": "object",
+            "description": "upsert: Chest; rename: name; delete: {}; structure_changed: structureChanged."
+          }
+        }
+      },
+      "SyncRequest": {
+        "type": "object",
+        "required": [
+          "protocolVersion",
+          "clientId",
+          "worldId",
+          "changes"
+        ],
+        "properties": {
+          "protocolVersion": {
+            "const": 1
+          },
+          "clientId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "worldId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          },
+          "bootstrap": {
+            "type": "boolean",
+            "default": false,
+            "description": "Explicit creation of unknown world; never bypasses chest revision checks."
+          },
+          "changes": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 256,
+            "items": {
+              "$ref": "#/components/schemas/Change"
+            }
+          }
+        }
+      },
+      "Result": {
+        "type": "object",
+        "required": [
+          "changeId",
+          "chestId",
+          "revision",
+          "status"
+        ],
+        "properties": {
+          "changeId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "chestId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "revision": {
+            "type": "integer"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "applied",
+              "duplicate",
+              "conflict",
+              "rejected"
+            ]
+          },
+          "serverRevision": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "reason": {
+            "type": "string"
+          }
+        }
+      },
+      "SyncResponse": {
+        "type": "object",
+        "required": [
+          "success",
+          "protocolVersion",
+          "results"
+        ],
+        "properties": {
+          "success": {
+            "const": true
+          },
+          "protocolVersion": {
+            "const": 1
+          },
+          "results": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Result"
+            }
+          }
+        }
+      }
+    }
+  }
+}
